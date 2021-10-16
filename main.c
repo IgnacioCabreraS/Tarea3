@@ -24,7 +24,7 @@ typedef struct{
 // prototipos
 void* cargarDocumentos(Map* mapaGlobal, List* listaArchivos);
 int isEqualString(void* key1, void*key2);
-char*get_txt_field (char *lineaArchivo, int i);
+char*get_txt_field (char* lineaArchivo, int i);
 
 // principal
 
@@ -33,7 +33,7 @@ int main(){
     Map* mapaGlobal = createMap(isEqualString);
 
     // creamos la lista
-    List* listaArchivos = createList();
+    List* listaDocs = createList();
 
     int opcion=1;
     printf("============== DOCUMENTOS =============\n");
@@ -49,7 +49,7 @@ int main(){
         scanf("%d", &opcion);
 
         switch(opcion){
-            case 1:cargarDocumentos(mapaGlobal, listaArchivos);break;
+            case 1:cargarDocumentos(mapaGlobal, listaDocs);break;
             case 2:printf("NO HECHA.\n");break;
             case 3:printf("NO HECHA.\n");break;
             case 4:printf("NO HECHA.\n");break;
@@ -66,8 +66,8 @@ int isEqualString(void * key1, void * key2){
     return 0;
 }
 
-void* cargarDocumentos(Map *mapaGlobal, List* ListaArchivos){
-
+void* cargarDocumentos(Map *mapaGlobal, List* listaDocs){
+    
     char archivo[1024];
     char aux_nombreArchivo[1024];
     FILE * file;
@@ -84,71 +84,49 @@ void* cargarDocumentos(Map *mapaGlobal, List* ListaArchivos){
     nuevoDoc->nombreDocumento = aux_nombreArchivo;
     printf("Nombre archivo : %s\n",nuevoDoc->nombreDocumento);
 
-    char lineaArchivo[1024];
-    int cont = 0;
-    
-    // sacamos las palabras de la cadena y contamos 
-    // en el for lo recomendable es leer hasta el salto de linea
-    //funcion determina palabras que hay en la cadena
+    char ch;
+    //DATOS DEL nuevoDoc
+    int caracteres=0, palabras=0, lineas=0;
+    palabra * nuevaPalabra = (palabra*)malloc(sizeof(palabra));
 
-    while(fgets(lineaArchivo, 1024, file) != NULL){
-        for(int i = 0; i < 12; i++){
-            char * aux = get_txt_field(lineaArchivo, i);
-            printf("aux = %s\n",aux);
+    while((ch = fgetc(file)) != EOF){
+        caracteres++;
+
+        if(ch == '\n' || ch == '\0'){
+            lineas++;
         }
-        cont++;
+        
+        if(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\0'){
+            palabras++;
 
-        // contador es la cantidad de cadenas que hay en el archivo
-        // crear funcion que determine la cantidad de cadenas
-        if(cont == 1) break;
+        }
+        
     }
-    /*
-    while(!feof(file)){
-        fgets(aux,150,file);
-        printf("%s \n",aux);
+
+    if(caracteres > 0){
+        palabras++;
+        lineas++;
     }
-    /*
+
+    printf("\n");
+    printf("Total characters: %d\n", caracteres);
+    printf("Total words: %d\n", palabras);
+    printf("Total lines: %d\n", lineas);
     
-    /*
-    archivo en la lista
-    pregunta se llama a la funcion, sino su return loco.
+    nuevoDoc -> cantidadPalabras = palabras;
+    nuevoDoc -> cantidadCaracteres = caracteres;
+    //archivo en la lista
+    pushBack(listaDocs, nuevoDoc);
 
-    char*  confirmacion = (char*)malloc(3*sizeof(char));
+    char * palabra = (char*)malloc(10*sizeof(char));
+    char * confirmacion = (char*)malloc(3*sizeof(char));
     confirmacion = "SI";
-     pregunta se llama a la funcion, sino su return loco.
-    */
-}
-// obtener palabras de txt
+        
+    printf("Si desea cargar otro archivo escribra 'SI': ");
+    scanf("%s", palabra);
 
-char*get_txt_field (char * tmp, int k){
-    int open_mark = 0;
-    char* ret=(char*) malloc(100*sizeof(char));
-    int ini_i=0, i=0;
-    int j=0;
-    while(tmp[i+1]!='\0'){
-        if(tmp[i]== '\"'){
-            open_mark = 1-open_mark;
-            if(open_mark) ini_i = i+1;
-            i++;
-            continue;
-        }
-        if(open_mark || tmp[i]!= ' '){
-            if(k==j) ret[i-ini_i] = tmp[i];
-            i++;
-            continue;
-        }
-        if(tmp[i]== ' '){
-            if(k==j) {
-               ret[i-ini_i] = 0;
-               return ret;
-            }
-            j++; ini_i = i+1;
-        }
-        i++;
+    if(strcmp(palabra, confirmacion) == 0){
+        cargarDocumentos(mapaGlobal,listaDocs);
     }
-    if(k==j) {
-       ret[i-ini_i] = 0;
-       return ret;
-    }
-    return NULL;
+    printf("Archivos cargados\n");
 }
