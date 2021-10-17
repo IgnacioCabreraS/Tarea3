@@ -21,9 +21,14 @@ typedef struct{
     List* nombreDelDocumento;
 }palabra;
 
+// define
+#define MAX_ARGS 90
+#define MAX_CADENA 100
+
 // prototipos
 void* cargarDocumentos(Map* mapaGlobal, List* listaArchivos);
 int isEqualString(void* key1, void*key2);
+int extrae_argumentos(char *orig, char args[][MAX_CADENA], int max_args);// (char *orig, char *delim, char args[][MAX_CADENA], int max_args);
 
 // principal
 
@@ -64,6 +69,30 @@ int isEqualString(void * key1, void * key2){
     if(strcmp((char*)key1, (char*)key2)==0) return 1;
     return 0;
 }
+int extrae_argumentos(char *orig, char args[][MAX_CADENA], int max_args){ // (char *orig, char *delim, char args[][MAX_CADENA], int max_args){
+    
+    char *tmp;
+    int num=0;
+    /* Reservamos memoria para copiar la candena ... pero la memoria justa */
+    char *str = malloc(strlen(orig)+1);
+    strcpy(str, orig);
+    char tokens[] = " ',.;:-_!?¿¡(){}[]|@#~%&/\\";
+
+    /* Extraemos la primera palabra */
+    tmp=strtok(str, tokens);
+  
+    do{
+        if (num==max_args)
+        return max_args+1;  /* Si hemos extraído más cadenas que palabras devolvemos */
+        /* El número de palabras máximo y salimos */
+        strcpy(args[num], tmp);   /* Copiamos la palabra actual en el array */
+        num++;
+        /* Extraemos la siguiente palabra */
+        tmp=strtok(NULL, tokens);
+    }while (tmp!=NULL);
+
+  return num;
+}
 void* cargarDocumentos(Map *mapaGlobal, List* listaDocs){
     
     char archivo[1024];
@@ -83,17 +112,24 @@ void* cargarDocumentos(Map *mapaGlobal, List* listaDocs){
     printf("Nombre archivo : %s\n",nuevoDoc->nombreDocumento);
     
     //DATOS PALABRAS
-    /*
-    char archivin[1024];
-    int largoArchivo;
-    while(fgets(archivin, 1024, file) != NULL){
-        const char* aux;
-        largoArchivo = strlen(archivin);
-        for(int i = 0; i < largoArchivo ; i++){
+    char args[MAX_ARGS][MAX_CADENA];
+    char lineaArchivo[1024];
 
+    while(fgets(lineaArchivo, 1024, file) != NULL){
+        int nargs = extrae_argumentos(lineaArchivo,args,MAX_ARGS); // extrae_argumentos(lineaArchivo," ",args,MAX_ARGS);
+        int i;
+
+        if(nargs > MAX_ARGS){
+            printf ("Se han devuelto más palabras del máximo\n");
+            nargs = MAX_ARGS;
+        }
+        printf("Cadena: %s\n", lineaArchivo);
+        for(i = 0; i < nargs; i++){
+            printf("Palabra %d: %s\n", i, args[i]);
+            // aca tenemos que guardar las palabras en el mapa
         }
     }
-    */
+    ///////////////////////////////////////////////////////////////////////////////////////
     //DATOS DEL nuevoDoc
     char ch;
     int caracteres=0, palabras=0, lineas=0;
