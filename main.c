@@ -18,13 +18,12 @@ typedef struct{
     int cantidadLetras;
     char* NombrePalabras;
     int frecuenciaPalabras;
-    List*  nombreDelDocumento;
+    List* nombreDelDocumento;
 }palabra;
 
 // prototipos
 void* cargarDocumentos(Map* mapaGlobal, List* listaArchivos);
 int isEqualString(void* key1, void*key2);
-char*get_txt_field (char* lineaArchivo, int i);
 
 // principal
 
@@ -65,7 +64,6 @@ int isEqualString(void * key1, void * key2){
     if(strcmp((char*)key1, (char*)key2)==0) return 1;
     return 0;
 }
-
 void* cargarDocumentos(Map *mapaGlobal, List* listaDocs){
     
     char archivo[1024];
@@ -83,50 +81,60 @@ void* cargarDocumentos(Map *mapaGlobal, List* listaDocs){
     documento * nuevoDoc = (documento*)malloc(sizeof(documento));
     nuevoDoc->nombreDocumento = aux_nombreArchivo;
     printf("Nombre archivo : %s\n",nuevoDoc->nombreDocumento);
+    
+    //DATOS PALABRAS
+    /*
+    char archivin[1024];
+    int largoArchivo;
+    while(fgets(archivin, 1024, file) != NULL){
+        const char* aux;
+        largoArchivo = strlen(archivin);
+        for(int i = 0; i < largoArchivo ; i++){
 
-    char ch;
+        }
+    }
+    */
     //DATOS DEL nuevoDoc
+    char ch;
     int caracteres=0, palabras=0, lineas=0;
-    palabra * nuevaPalabra = (palabra*)malloc(sizeof(palabra));
 
     while((ch = fgetc(file)) != EOF){
         caracteres++;
-
+    
         if(ch == '\n' || ch == '\0'){
             lineas++;
         }
         
         if(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\0'){
             palabras++;
-
         }
         
     }
+    fclose(file);
+
 
     if(caracteres > 0){
         palabras++;
         lineas++;
     }
-
-    printf("\n");
-    printf("Total characters: %d\n", caracteres);
-    printf("Total words: %d\n", palabras);
-    printf("Total lines: %d\n", lineas);
     
     nuevoDoc -> cantidadPalabras = palabras;
     nuevoDoc -> cantidadCaracteres = caracteres;
+    
     //archivo en la lista
+
     pushBack(listaDocs, nuevoDoc);
 
     char * palabra = (char*)malloc(10*sizeof(char));
     char * confirmacion = (char*)malloc(3*sizeof(char));
     confirmacion = "SI";
         
-    printf("Si desea cargar otro archivo escribra 'SI': ");
+    printf("Si DESEA cargar otro archivo escribra 'SI': ");
     scanf("%s", palabra);
-
+    fclose(file);
     if(strcmp(palabra, confirmacion) == 0){
         cargarDocumentos(mapaGlobal,listaDocs);
     }
+
     printf("Archivos cargados\n");
 }
