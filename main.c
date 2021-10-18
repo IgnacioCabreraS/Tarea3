@@ -6,8 +6,6 @@
 #include "map.h"
 #include "list.h"
 
-// estructuras
-
 typedef struct{
     char* nombreDocumento;
     int cantidadPalabras;
@@ -18,48 +16,50 @@ typedef struct{
     int cantidadLetras;
     char* nombrePalabra;
     int frecuencia;
-    List* nombreDelDocumento;
+    List* datosDoc;
 }palabra;
 
-// define
+typedef struct{
+    char * nombreDoc;
+    int frecPalabraDoc;
+}datosDoc;
+
 #define MAX_ARGS 90
 #define MAX_CADENA 100
 
-// prototipos
 void* cargarDocumentos(Map* mapaGlobal, List* listaArchivos);
 int isEqualString(void* key1, void*key2);
 int extrae_argumentos(char *orig, char args[][MAX_CADENA], int max_args);
 int contLetras(char args[]);
-
-// principal
+void* buscarPorPalabra(Map* mapaGlobal);
 
 int main(){
-    // mapa Global donde guardamos los archivos
+    
     Map* mapaGlobal = createMap(isEqualString);
-
-    // creamos la lista
     List* listaDocs = createList();
+
+    cargarDocumentos(mapaGlobal, listaDocs);
 
     int opcion=1;
     printf("============== DOCUMENTOS =============\n");
 
     while(opcion!=0){
-        printf("1. Cargar documento.\n");
-        printf("2. Mostrar documentos ordenados.\n");
-        printf("3. Buscar por palabra.\n");
-        printf("4. Palabras con mayor frecuencia.\n");
-        printf("5. Palabras mas relevantes.\n");
-        printf("6. Buscar palabra en documento.\n");
+        //printf(". Cargar documento.\n");
+        printf("1. Mostrar documentos ordenados.\n");
+        printf("2. Buscar por palabra.\n");
+        printf("3. Palabras con mayor frecuencia.\n");
+        printf("4. Palabras mas relevantes.\n");
+        printf("5. Buscar palabra en documento.\n");
         printf("0. Salir.\n");
         scanf("%d", &opcion);
 
         switch(opcion){
-            case 1:cargarDocumentos(mapaGlobal, listaDocs);break;
-            case 2:printf("NO HECHA.\n");break;
+            //case 1:cargarDocumentos(mapaGlobal, listaDocs);break;
+            case 1:printf("NO HECHA.\n");break;
+            case 2:buscarPorPalabra(mapaGlobal);break;
             case 3:printf("NO HECHA.\n");break;
             case 4:printf("NO HECHA.\n");break;
-            case 5:printf("NO HECHA.\n");break;
-            case 6:printf("NO HECHA.\n");break;   
+            case 5:printf("NO HECHA.\n");break;   
         }
     }
 
@@ -70,6 +70,7 @@ int isEqualString(void * key1, void * key2){
     if(strcmp((char*)key1, (char*)key2)==0) return 1;
     return 0;
 }
+
 int extrae_argumentos(char *orig, char args[][MAX_CADENA], int max_args){
     
     char *tmp;
@@ -118,14 +119,49 @@ void* cargarDocumentos(Map *mapaGlobal, List* listaDocs){
         file = fopen(archivo, "r");
     }while(!file);
 
+    documento * doc = (documento*)malloc(sizeof(documento));
+    doc = firstList(listaDocs);
+
+    while(doc != NULL){
+        
+        if(strcmp(doc->nombreDocumento,aux_nombreArchivo) == 0){
+            printf("Este txt ya esta cargado, escriba otro.\n");
+            fclose(file);
+            cargarDocumentos(mapaGlobal,listaDocs);
+        }
+        doc=nextList(listaDocs);
+        if(doc==NULL)break;
+    }
+
     documento * nuevoDoc = (documento*)malloc(sizeof(documento));
     nuevoDoc->nombreDocumento = aux_nombreArchivo;
-    printf("Nombre archivo : %s\n",nuevoDoc->nombreDocumento);
-    
+    //printf("Nombre archivo : %s\n",nuevoDoc->nombreDocumento);
+
+    ///////////////////////////DATOS DEL DOCUMENTOS////////////////////////////////////////
+    char ch;
+    int caracteres=0, palabras=0;
+
+    while((ch = fgetc(file)) != EOF){
+        caracteres++;
+        if(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\0'){
+            palabras++;
+        }
+    }
+    fclose(file);
+
+    if(caracteres > 0){
+        palabras++;
+    }
+    nuevoDoc -> cantidadPalabras = palabras;
+    nuevoDoc -> cantidadCaracteres = caracteres;
+    pushBack(listaDocs, nuevoDoc);
+
+
     ////////////////////////////DATOS PALABRAS////////////////////////////////////////
     
     char args[MAX_ARGS][MAX_CADENA];
     char lineaArchivo[1024];
+    file = fopen(archivo, "r");
 
     while(fgets(lineaArchivo, 1024, file) != NULL){
         int nargs = extrae_argumentos(lineaArchivo,args,MAX_ARGS);
@@ -146,11 +182,15 @@ void* cargarDocumentos(Map *mapaGlobal, List* listaDocs){
                 nuevaPalabra->nombrePalabra = args[i];
                 nuevaPalabra->frecuencia++;
 
+                datosDoc * datosDocumento = (datosDoc*)malloc(sizeof(datosDoc));
                 List * L = createList();
-                pushFront(L,aux_nombreArchivo);
-                nuevaPalabra->nombreDelDocumento = L;
                 
-                int cantidadDeLetras = contLetras(args[i]);
+                datosDocumento->frecPalabraDoc=1;
+                datosDocumento->nombreDoc = aux_nombreArchivo;
+                pushFront(L,datosDocumento);
+                nuevaPalabra->datosDoc = L;
+                
+                int cantidadDeLetras = contLetras(args[i]);  
                 printf("%i\n", cantidadDeLetras);
                 nuevaPalabra->cantidadLetras = cantidadDeLetras;
 
@@ -158,75 +198,95 @@ void* cargarDocumentos(Map *mapaGlobal, List* listaDocs){
                 
             }
             else{ // EXISTE PALABRA EN MAPA
-                //printf("Entra en el else\n");
+                
                 palabra * palabraExiste = (palabra*)searchMap(mapaGlobal,args[i]);
                 palabraExiste->frecuencia++;
-                //printf("creamos la lista y buscamos en el mapa\n");
-                //List * L = (List*)searchMap(mapaGlobal,args[i]);
-                //printf("posicionamos la lista en la primera posicion\n");
-                char* documento = firstList(palabraExiste->nombreDelDocumento);
-                //printf("estamos en la primera posicion de la lista\n");
 
-                while(documento != NULL){
-                    
-                    printf("entra a while\n");
-                    if(documento == aux_nombreArchivo){
-                        printf("documento ya existe en lista de palabra existente\n");
+                List * list = palabraExiste->datosDoc;
+
+                datosDoc * datosDocumento = (datosDoc*)malloc(sizeof(datosDoc));
+                datosDocumento = firstList(palabraExiste->datosDoc);
+                bool existe = false;
+
+                while(datosDocumento!=NULL){
+                    if(strcmp(aux_nombreArchivo,datosDocumento->nombreDoc) == 0){
+                        printf("Nombre del documento ya existe en datosDoc de palabra.\n");
+                        datosDocumento->frecPalabraDoc++;
+                        existe = true;
                         break;
                     }
-                    documento = nextList(palabraExiste->nombreDelDocumento);
-                    if(palabraExiste->nombreDelDocumento==NULL)break;
+                    datosDocumento=nextList(palabraExiste->datosDoc);
+                    if(palabraExiste->datosDoc == NULL)break;
                 }
                 
-                if(documento != aux_nombreArchivo){
-                    printf("sapea\n");
-                    pushFront(palabraExiste->nombreDelDocumento,aux_nombreArchivo);
+                // Nombre de doc no está en datosDoc de palabra, o sea el archivo de donde sale la palabra
+                // es nuevo.
+                if(existe == false){
+                    printf("Palabra proviene de archivo nuevo\n");
+                    datosDoc * datos = (datosDoc*)malloc(sizeof(datosDoc));
+                    datos->frecPalabraDoc=1;
+                    datos->nombreDoc = aux_nombreArchivo;
+                    pushFront(list,datos);
                 }
-                
             }
         }
     }
-    ///////////////////////////DATOS DEL DOCUMENTOS////////////////////////////////////////
-    char ch;
-    int caracteres=0, palabras=0, lineas=0;
 
-    while((ch = fgetc(file)) != EOF){
-        caracteres++;
-    
-        if(ch == '\n' || ch == '\0'){
-            lineas++;
-        }
-        
-        if(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\0'){
-            palabras++;
-        }
-        
-    }
-    fclose(file);
-
-
-    if(caracteres > 0){
-        palabras++;
-        lineas++;
-    }
-    
-    nuevoDoc -> cantidadPalabras = palabras;
-    nuevoDoc -> cantidadCaracteres = caracteres;
-    
-    //archivo en la lista
-
-    pushBack(listaDocs, nuevoDoc);
-
-    char * palabra = (char*)malloc(10*sizeof(char));
+    char * palabra = (char*)malloc(3*sizeof(char));
     char * confirmacion = (char*)malloc(3*sizeof(char));
     confirmacion = "SI";
         
-    printf("Si DESEA cargar otro archivo escribra 'SI': ");
+    printf("Si desea cargar otro archivo escriba 'SI': ");
     scanf("%s", palabra);
     fclose(file);
     if(strcmp(palabra, confirmacion) == 0){
         cargarDocumentos(mapaGlobal,listaDocs);
     }
-
     printf("Archivos cargados\n");
+}
+
+void * buscarPorPalabra(Map * mapaGlobal){
+    char * palabraIngresada = (char*)malloc(40*sizeof(char));
+    printf("Ingrese la palabra a buscar: ");
+    scanf("%s", palabraIngresada);
+    const char * M = searchMap(mapaGlobal,palabraIngresada);
+
+    if(M == NULL){
+        printf("Palabra buscada no existe.\n");
+        
+    }
+    else{
+        printf("Palabra encontrada.\n");
+        palabra * palabraExiste = (palabra*)searchMap(mapaGlobal,palabraIngresada);
+        
+        datosDoc * datosDocumento = (datosDoc*)malloc(sizeof(datosDoc));
+        datosDocumento = firstList(palabraExiste->datosDoc);
+
+        int cont = 0;
+        while(datosDocumento != NULL){
+            cont++;
+            printf("%s\n",datosDocumento->nombreDoc);
+            datosDocumento=nextList(palabraExiste->datosDoc);
+        }
+        int numeroDocs = cont;
+
+        datosDocumento = firstList(palabraExiste->datosDoc);
+        cont=0;
+        while(numeroDocs != 0){
+            cont++;
+            if(cont = datosDocumento->frecPalabraDoc){
+                printf("Documento: %s. Frecuencia palabra %s: %d.\n",datosDocumento->nombreDoc, palabraIngresada, datosDocumento->frecPalabraDoc);
+                numeroDocs--;
+            }
+            datosDocumento=nextList(palabraExiste->datosDoc);
+            if(datosDocumento==NULL){
+                datosDocumento = firstList(palabraExiste->datosDoc);
+            }
+            if(numeroDocs <= 0){
+                break;
+            }
+        }
+
+        //printf("contador de archivo de palabra: %d\n", cont);
+    }
 }
