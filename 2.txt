@@ -1,0 +1,2 @@
+Se trata de un lenguaje dinamico que cualquier profesional de IT o desarrollador web debe tener en su radar.
+Se implementa en diversas plataformas y sistemas operativos y permite automatizar procesos. A continuacion, desarrollaremos sus innumerables usos y posibilidades.
