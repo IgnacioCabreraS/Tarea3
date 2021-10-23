@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -17,24 +18,31 @@ typedef struct{
     char* nombrePalabra;
     int frecuencia;
     List* datosDoc;
+    int cantidadDocs;
 }palabra;
 
 typedef struct{
     char * nombreDoc;
     int frecPalabraDoc;
+
 }datosDoc;
+
+typedef struct{
+    char * nombre;
+    double relevancia;
+}palRelevante;
 
 #define MAX_ARGS 90
 #define MAX_CADENA 100
 
-void* cargarDocumentos(Map* mapaGlobal, List* listaArchivos, int numeroDocs);
+void* cargarDocumentos(Map* mapaGlobal, List* listaArchivos, int *numeroDocs);
 int isEqualString(void* key1, void*key2);
 int extrae_argumentos(char *orig, char args[][MAX_CADENA], int max_args);
 int contLetras(char args[]);
 void minus(char* linea);
 void* documentoOrdenados(List* listaDocs);
 void* buscarPorPalabra(Map* mapaGlobal);
-void* mostrarPalabrasRelevantes(Map* mapaGlobal, List* listaDocs, int numeroDocs);
+void* mostrarPalabrasRelevantes(Map* mapaGlobal, List* listaDocs, int* numeroDocs);
 void* buscarPalabraDoc(Map* mapaGlobal, List* listaDocs);
 
 
@@ -43,7 +51,8 @@ int main(){
     Map* mapaGlobal = createMap(isEqualString);
     List* listaDocs = createList();
     int numeroDocs = 0;
-    cargarDocumentos(mapaGlobal, listaDocs, numeroDocs);
+    
+    cargarDocumentos(mapaGlobal, listaDocs, &numeroDocs);
 
 
     int opcion=1;
@@ -62,7 +71,7 @@ int main(){
             case 1:documentoOrdenados(listaDocs);break;
             case 2:buscarPorPalabra(mapaGlobal);break;
             case 3:printf("NO HECHA.\n");break;
-            case 4:mostrarPalabrasRelevantes(mapaGlobal,listaDocs,numeroDocs);break;
+            case 4:mostrarPalabrasRelevantes(mapaGlobal,listaDocs,&numeroDocs);break;
             case 5:buscarPalabraDoc(mapaGlobal,listaDocs);break;
         }
     }
@@ -120,7 +129,7 @@ void minus(char* linea){
 }
 
 
-void* cargarDocumentos(Map *mapaGlobal, List* listaDocs, int numeroDocs){
+void* cargarDocumentos(Map *mapaGlobal, List* listaDocs, int *numeroDocs){
     
     char archivo[1024];
     char aux_nombreArchivo[100];
@@ -150,7 +159,7 @@ void* cargarDocumentos(Map *mapaGlobal, List* listaDocs, int numeroDocs){
         if(doc==NULL)break;
     }
 
-    numeroDocs+=1;
+    (*numeroDocs)+=1;
     /////////// DATOS DEL DOCUMENTOS ///////////
 
     documento * nuevoDoc = (documento*)malloc(sizeof(documento));
@@ -217,6 +226,8 @@ void* cargarDocumentos(Map *mapaGlobal, List* listaDocs, int numeroDocs){
                 //datosDocumento->nombreDoc =aux_nombreArchivo;
                 pushFront(L,datosDocumento);
                 nuevaPalabra->datosDoc = L;
+
+                nuevaPalabra->cantidadDocs = 1;
                 
                 //printf("3.\n");
                 int cantidadDeLetras = contLetras(args[i]);  
@@ -236,6 +247,7 @@ void* cargarDocumentos(Map *mapaGlobal, List* listaDocs, int numeroDocs){
                 
                 palabra * palabraExiste = (palabra*)searchMap(mapaGlobal,nuevaPalabra->nombrePalabra);
                 palabraExiste->frecuencia++;
+                
 
                 printf("Palabra: %s. Frecuencia: %d. Cantidad de letras: %d.\n", palabraExiste->nombrePalabra,palabraExiste->frecuencia,palabraExiste->cantidadLetras);
 
@@ -267,6 +279,7 @@ void* cargarDocumentos(Map *mapaGlobal, List* listaDocs, int numeroDocs){
                 if(existe == false){
                     //printf("Palabra proviene de archivo nuevo\n");
                     //printf("Palabra: %s\n", palabraExiste->nombrePalabra);
+                    palabraExiste->cantidadDocs += 1;
                     datosDoc * datos = (datosDoc*)malloc(sizeof(datosDoc));
                     datos->frecPalabraDoc=1;
                     char* aux = (char*) malloc(sizeof(char));
@@ -306,10 +319,18 @@ void * documentoOrdenados(List* listaDocs){
         printf("Cantidad caracteres: %i\n",P->cantidadCaracteres);
         P = nextList(listaDocs);
     }
+
+    /*
+        ---------------------POSIBLES METODOS PARA ORDENAR LISTAS-----------------------------------
+
+        
+
+
+    */
 }
 
 void * buscarPorPalabra(Map * mapaGlobal){
-    char * palabraIngresada = (char*)malloc(sizeof(char));
+    char * palabraIngresada = (char*)malloc(50 * sizeof(char)); //  modificacion cantidad 
     printf("Ingrese la palabra a buscar: ");
     scanf("%s", palabraIngresada);
     const char * M = searchMap(mapaGlobal,palabraIngresada);
@@ -349,50 +370,13 @@ void * buscarPorPalabra(Map * mapaGlobal){
         }
     }
 }
-void* mostrarPalabrasRelevantes(Map* mapaGlobal, List* listaDocs, int numeroDocs){
+void* mostrarPalabrasRelevantes(Map* mapaGlobal, List* listaDocs, int* numeroDocs){
 
-    char* nombreDoc = (char*) malloc (sizeof(char));
+    char* nombreTxt = (char*) malloc(50 * sizeof(char));
     printf("Ingrese el nombre del documento deseado: ");
-    scanf("%s", nombreDoc);
+    scanf("%s", nombreTxt);
 
-    //
-
-
-
-
-    
-    //FORMULA PARA LAS PALABRAS RELEVANTES
-
-    //ocurrencias de palabra en el documento == MapaGlobal = palabra->lista = datosDoc->frecPalabra.
-        
-    //cantidad de palabras en documento == listaDocs->cantidadPalabras.
-    //número de documentos == numeroDocs
-    //documentos que tienen la palabra p == cantidad de listas de numeroDocs en Palabra
-
-    //documento* datosDoc = (documento*)malloc(sizeof(documento));
-    //palabra* palalabra = (palabra*)malloc(sizeof(documento));
-        
-    //int primeraParte = (int doc->frecuencia)/int doc->cantidadPalabras);
-
-    // docsConPalabras estan en mapa global?
-
-    //int segundaParte = log(int numeroDocs/ int docsConPalabra);
-
-    //in resultado = primeraParte * segundaParte;
-
-
-    
-    //creamos lista para guardar las palabras relevantes, luego la recorremos y paramos hasta que
-    //encuentre 10 palabras con un contador.
-
-}
-
-void* buscarPalabraDoc(Map* mapaGlobal, List* listaDocs){
-
-    char* nombreDoc = (char*)malloc(sizeof(char));
-    printf("Ingrese el nombre del documento: ");
-    scanf("%s", nombreDoc);
-    
+    //Buscar si nombreDoc existe en listaDocs.
     // verificacion si existe el documento en nuestra lista
     bool valido = false;
     //documento * docList = (documento*)malloc(sizeof(documento));
@@ -400,7 +384,7 @@ void* buscarPalabraDoc(Map* mapaGlobal, List* listaDocs){
     docList = firstList(listaDocs);
     while(docList != NULL){
         printf("ALOA: %s\n",docList->nombreDocumento);
-        if(strcmp(nombreDoc, docList->nombreDocumento) == 0){
+        if(strcmp(nombreTxt, docList->nombreDocumento) == 0){
             
             printf("Documento si esta\n");
             valido = true;
@@ -410,6 +394,101 @@ void* buscarPalabraDoc(Map* mapaGlobal, List* listaDocs){
         docList = nextList(listaDocs);
         if(docList == NULL){
             printf("Documento no es\n");
+            valido = false;
+            break;
+        }
+    }
+
+    FILE * txt;
+    char * blocDeNotas = (char*)malloc(50*sizeof(char));
+    strcpy(blocDeNotas,nombreTxt);
+    strcat(nombreTxt,".txt");
+    txt = fopen(nombreTxt, "r");
+
+    // Crear lista con struct "relevantes" (RELEVANCIA Y nombrePalabraR)
+    
+    List * listaPR = createList();
+    palabra * M;
+    M = firstMap(mapaGlobal);
+    //printf("FUERA DEL PRIMER WHILE\n");
+
+    while(M != NULL){
+        //printf("1\n");
+        // Recorrer mapaGlobal, solo nos importan las palabras que tengan el doc buscado asociado a su datosDoc.
+        
+        // Si encuentra una palabra que tiene el documento buscado:
+        List * listAux = M->datosDoc;
+        datosDoc * datosAux = firstList(listAux);
+        while(datosAux != NULL){
+            //printf("2\n");
+            if(strcmp(datosAux->nombreDoc,blocDeNotas)==0){
+                //printf("3\n");
+                // - Se crea un struct "relevantes", nombrePalabraR = nombre de la palabra
+                palRelevante * palabraRelevante = (palRelevante*)malloc(sizeof(palRelevante));
+
+                char* aux = (char*)malloc(50*sizeof(char));
+
+                strcpy(aux, M->nombrePalabra);
+                
+                palabraRelevante->nombre = aux;
+                // - RELEVANCIA = calculo de la formula ( RELEVANCIA debe ser de tipo long long int para guardar decimales)
+                double primeraParte = ((double)(datosAux->frecPalabraDoc)/(docList->cantidadPalabras));
+                
+                //printf("primera parte: %.2lf\n",primeraParte);
+
+                //int kikiDuYouLoveME = M->cantidadDocs;
+                //printf("cantidad docs = %d\n", kikiDuYouLoveME);
+
+                //printf("Numero Docs: %i\n", numeroDocs);
+                int segundaParte = (*numeroDocs/M->cantidadDocs);
+
+                //printf("segunda parte: %i\n",segundaParte);
+
+                palabraRelevante->relevancia = (primeraParte * (double)segundaParte);
+                //printf("Nombre palabra: %s\n",palabraRelevante->nombre);
+                //printf("Relevancia: %.2lf\n",palabraRelevante->relevancia);
+                pushBack(listaPR,palabraRelevante);
+
+            }
+            datosAux = nextList(listAux);
+            if(datosAux == NULL)break;
+        }
+
+        M = nextMap(mapaGlobal);
+        if(M == NULL)break;
+    }
+    
+    // Cuando ya se tengan todas las palabras posibles guardadas:
+    palRelevante * palabraR = (palRelevante*)malloc(sizeof(palRelevante));
+    palabraR = firstList(listaPR);
+    // - Mostrar maximo 10 datos RELEVANCIA de la misma forma que mostramos los datos en buscarPorPalabra
+    
+
+}
+
+void* buscarPalabraDoc(Map* mapaGlobal, List* listaDocs){
+
+    char* nombreDoc = (char*)malloc(50*sizeof(char));
+    printf("Ingrese el nombre del documento: ");
+    scanf("%s", nombreDoc);
+    
+    // verificacion si existe el documento en nuestra lista
+    bool valido = false;
+    //documento * docList = (documento*)malloc(sizeof(documento));
+    documento * docList;
+    docList = firstList(listaDocs);
+    while(docList != NULL){
+        //printf("ALOA: %s\n",docList->nombreDocumento);
+        if(strcmp(nombreDoc, docList->nombreDocumento) == 0){
+            
+            //printf("Documento si esta\n");
+            valido = true;
+            break;
+        }
+        //printf("ALO: %s\n",docList->nombreDocumento);
+        docList = nextList(listaDocs);
+        if(docList == NULL){
+            //printf("Documento no es\n");
             valido = false;
             break;
         }
@@ -439,7 +518,7 @@ void* buscarPalabraDoc(Map* mapaGlobal, List* listaDocs){
             }
             
             for(i = 0; i < nargs; i++){
-                char* aux = (char*) malloc(sizeof(char));
+                char* aux = (char*) malloc(50*sizeof(char));
                 strcpy(aux, args[i]);
                 if(strcmp(aux,nombrePalabra) == 0){
                     printf("Cadena: %s\n", lineaArchivo);
