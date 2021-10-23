@@ -27,25 +27,29 @@ typedef struct{
 #define MAX_ARGS 90
 #define MAX_CADENA 100
 
-void* cargarDocumentos(Map* mapaGlobal, List* listaArchivos);
+void* cargarDocumentos(Map* mapaGlobal, List* listaArchivos, int numeroDocs);
 int isEqualString(void* key1, void*key2);
 int extrae_argumentos(char *orig, char args[][MAX_CADENA], int max_args);
 int contLetras(char args[]);
 void minus(char* linea);
-void * documentoOrdenados(List* listaDocs);
+void* documentoOrdenados(List* listaDocs);
 void* buscarPorPalabra(Map* mapaGlobal);
+void* mostrarPalabrasRelevantes(Map* mapaGlobal, List* listaDocs, int numeroDocs);
+void* buscarPalabraDoc(Map* mapaGlobal, List* listaDocs);
+
 
 int main(){
     
     Map* mapaGlobal = createMap(isEqualString);
     List* listaDocs = createList();
+    int numeroDocs = 0;
+    cargarDocumentos(mapaGlobal, listaDocs, numeroDocs);
 
-    cargarDocumentos(mapaGlobal, listaDocs);
 
     int opcion=1;
-    printf("============== DOCUMENTOS =============\n");
 
     while(opcion!=0){
+        printf("============== DOCUMENTOS =============\n");
         printf("1. Mostrar documentos ordenados.\n");
         printf("2. Buscar por palabra.\n");
         printf("3. Palabras con mayor frecuencia.\n");
@@ -58,8 +62,8 @@ int main(){
             case 1:documentoOrdenados(listaDocs);break;
             case 2:buscarPorPalabra(mapaGlobal);break;
             case 3:printf("NO HECHA.\n");break;
-            case 4:printf("NO HECHA.\n");break;
-            case 5:printf("NO HECHA.\n");break;   
+            case 4:mostrarPalabrasRelevantes(mapaGlobal,listaDocs,numeroDocs);break;
+            case 5:buscarPalabraDoc(mapaGlobal,listaDocs);break;
         }
     }
 
@@ -116,7 +120,7 @@ void minus(char* linea){
 }
 
 
-void* cargarDocumentos(Map *mapaGlobal, List* listaDocs){
+void* cargarDocumentos(Map *mapaGlobal, List* listaDocs, int numeroDocs){
     
     char archivo[1024];
     char aux_nombreArchivo[100];
@@ -130,6 +134,8 @@ void* cargarDocumentos(Map *mapaGlobal, List* listaDocs){
         file = fopen(archivo, "r");
     }while(!file);
 
+    
+    
     documento * doc = (documento*)malloc(sizeof(documento));
     doc = firstList(listaDocs);
 
@@ -138,12 +144,13 @@ void* cargarDocumentos(Map *mapaGlobal, List* listaDocs){
         if(strcmp(doc->nombreDocumento,aux_nombreArchivo) == 0){
             printf("Este txt ya esta cargado, escriba otro.\n");
             fclose(file);
-            cargarDocumentos(mapaGlobal,listaDocs);
+            cargarDocumentos(mapaGlobal,listaDocs, numeroDocs);
         }
         doc=nextList(listaDocs);
         if(doc==NULL)break;
     }
 
+    numeroDocs+=1;
     /////////// DATOS DEL DOCUMENTOS ///////////
 
     documento * nuevoDoc = (documento*)malloc(sizeof(documento));
@@ -285,7 +292,7 @@ void* cargarDocumentos(Map *mapaGlobal, List* listaDocs){
     scanf("%s", palabra);
     fclose(file);
     if(strcmp(palabra, confirmacion) == 0){
-        cargarDocumentos(mapaGlobal,listaDocs);
+        cargarDocumentos(mapaGlobal,listaDocs, numeroDocs);
     }
     printf("Archivos cargados\n");
 }
@@ -300,11 +307,6 @@ void * documentoOrdenados(List* listaDocs){
         P = nextList(listaDocs);
     }
 }
-
-// PEDIR NOMBRE DOCUMENTO
-// SE VERIFICA SI NOMBRE DOCUMENTO EXISTE EN LISTA DE DOCUMENTOS.
-// RECORRER EL MAPA BUSCANDO LAS PALABRAS ASOCIADAS AL DOC
-//
 
 void * buscarPorPalabra(Map * mapaGlobal){
     char * palabraIngresada = (char*)malloc(sizeof(char));
@@ -347,4 +349,107 @@ void * buscarPorPalabra(Map * mapaGlobal){
         }
     }
 }
+void* mostrarPalabrasRelevantes(Map* mapaGlobal, List* listaDocs, int numeroDocs){
 
+    char* nombreDoc = (char*) malloc (sizeof(char));
+    printf("Ingrese el nombre del documento deseado: ");
+    scanf("%s", nombreDoc);
+
+    //
+
+
+
+
+    
+    //FORMULA PARA LAS PALABRAS RELEVANTES
+
+    //ocurrencias de palabra en el documento == MapaGlobal = palabra->lista = datosDoc->frecPalabra.
+        
+    //cantidad de palabras en documento == listaDocs->cantidadPalabras.
+    //número de documentos == numeroDocs
+    //documentos que tienen la palabra p == cantidad de listas de numeroDocs en Palabra
+
+    //documento* datosDoc = (documento*)malloc(sizeof(documento));
+    //palabra* palalabra = (palabra*)malloc(sizeof(documento));
+        
+    //int primeraParte = (int doc->frecuencia)/int doc->cantidadPalabras);
+
+    // docsConPalabras estan en mapa global?
+
+    //int segundaParte = log(int numeroDocs/ int docsConPalabra);
+
+    //in resultado = primeraParte * segundaParte;
+
+
+    
+    //creamos lista para guardar las palabras relevantes, luego la recorremos y paramos hasta que
+    //encuentre 10 palabras con un contador.
+
+}
+
+void* buscarPalabraDoc(Map* mapaGlobal, List* listaDocs){
+
+    char* nombreDoc = (char*)malloc(sizeof(char));
+    printf("Ingrese el nombre del documento: ");
+    scanf("%s", nombreDoc);
+    
+    // verificacion si existe el documento en nuestra lista
+    bool valido = false;
+    //documento * docList = (documento*)malloc(sizeof(documento));
+    documento * docList;
+    docList = firstList(listaDocs);
+    while(docList != NULL){
+        printf("ALOA: %s\n",docList->nombreDocumento);
+        if(strcmp(nombreDoc, docList->nombreDocumento) == 0){
+            
+            printf("Documento si esta\n");
+            valido = true;
+            break;
+        }
+        printf("ALO: %s\n",docList->nombreDocumento);
+        docList = nextList(listaDocs);
+        if(docList == NULL){
+            printf("Documento no es\n");
+            valido = false;
+            break;
+        }
+    }
+    
+    if(valido == true){
+        printf("El documento existe, continua la operacion\n");
+
+        char* nombrePalabra = (char*)malloc(100 * sizeof(char));
+        printf("Ingrese el nombre de la palabra: ");
+        scanf("%s", nombrePalabra);
+
+        FILE * txt;
+        strcat(nombreDoc,".txt");
+        txt = fopen(nombreDoc, "r");
+
+        char args[MAX_ARGS][MAX_CADENA];
+        char lineaArchivo[1024];
+
+        while(fgets(lineaArchivo, 1024, txt) != NULL){
+            minus(lineaArchivo);
+            int nargs = extrae_argumentos(lineaArchivo,args,MAX_ARGS);
+            int i;
+            if(nargs > MAX_ARGS){
+                printf ("Se han devuelto más palabras del máximo\n");
+                nargs = MAX_ARGS;
+            }
+            
+            for(i = 0; i < nargs; i++){
+                char* aux = (char*) malloc(sizeof(char));
+                strcpy(aux, args[i]);
+                if(strcmp(aux,nombrePalabra) == 0){
+                    printf("Cadena: %s\n", lineaArchivo);
+                }
+            }       
+        }
+
+    }else{
+        printf("Doc no encontrado.\n");
+    }
+    
+
+}
