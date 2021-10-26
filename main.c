@@ -28,8 +28,8 @@ typedef struct{
     int frecPalabraDoc;
 }datosDoc;
 
-#define MAX_ARGS 90 // cantidad palabras en la linea
-#define MAX_CADENA 10000 //  cantidad de cadenas en el archivo
+#define MAX_ARGS 90
+#define MAX_CADENA 100
 #define MAXIMA_LONGITUD_CADENA 50
 
 int isEqualString(void* key1, void*key2);
