@@ -28,24 +28,20 @@ typedef struct{
     int frecPalabraDoc;
 }datosDoc;
 
-typedef struct{
-    char * nombre;
-    double relevancia;
-}palRelevante;
-
 #define MAX_ARGS 90 // cantidad palabras en la linea
-#define MAX_CADENA 100 //  cantidad de cadenas en el archivo
+#define MAX_CADENA 10000 //  cantidad de cadenas en el archivo
 #define MAXIMA_LONGITUD_CADENA 50
 
-void* cargarDocumentos(Map* mapaGlobal, TreeMap* treemapDocs, int *numeroDocs);
 int isEqualString(void* key1, void*key2);
+int lower_than_double(void * key1, void * key2);
+int lower_than_string(void* key1, void* key2);
 int extrae_argumentos(char *orig, char args[][MAX_CADENA], int max_args);
 int contLetras(char args[]);
 void minus(char* linea);
+void* cargarDocumentos(Map* mapaGlobal, TreeMap* treemapDocs, int *numeroDocs);
 void* documentoOrdenados(TreeMap* treemapDocs);
 void* buscarPorPalabra(Map* mapaGlobal);
-int lower_than_string(void* key1, void* key2);
-void*mostarPalabrasFrecuencia(Map* mapaGlobal, TreeMap * treemapDocs);
+void* mostarPalabrasFrecuencia(Map* mapaGlobal, TreeMap * treemapDocs);
 void* mostrarPalabrasRelevantes(Map* mapaGlobal, TreeMap * treemapDocs, int* numeroDocs);
 void* buscarPalabraDoc(Map* mapaGlobal, TreeMap * treemapDocs);
 
@@ -55,9 +51,6 @@ int main(){
     Map* mapaGlobal = createMap(isEqualString);
     TreeMap * treemapDocs = createTreeMap(lower_than_string);
     int numeroDocs = 0;
-    
-    //cargarDocumentos(mapaGlobal, treemapDocs, &numeroDocs);
-
     int opcion=1;
 
     while(opcion!=0){
@@ -83,18 +76,25 @@ int main(){
     return 0;
 }
 
-//Funcion para comparar claves de tipo string retorna 1 si son iguales
-
+/*
+    Funcion para comparar claves de tipo string retorna 1 si son iguales
+*/
 int isEqualString(void * key1, void * key2){
     if(strcmp((char*)key1, (char*)key2)==0) return 1;
     return 0;
 }
 
+/*
+    Funcion para comparar claves de tipo int retorna 1 si son key1 > key2. ordena en orden descendente (mayor a menor)
+*/
 int lower_than_double(void * key1, void * key2) {
     if(*(double*)key1 > *(double*)key2) return 1;
     return 0;
 }
 
+/*
+    Funcion para comparar claves de tipo string retorna 1 si son key1 < key2. ordena alfabeticamente 
+*/
 int lower_than_string(void* key1, void* key2){
     char* k1=(char*) key1;
     char* k2=(char*) key2;
@@ -102,33 +102,42 @@ int lower_than_string(void* key1, void* key2){
     return 0;
 }
 
+/*
+    Funcion que recive la cadena, ademas un arreglo que contenga las palabras y el numero maximo de palabras
+    se retorna la cantidad de palabras que se encuentran en la cadena
+*/
 int extrae_argumentos(char *orig, char args[][MAX_CADENA], int max_args){
     
     char *tmp;
     int num=0;
-    /* Reservamos memoria para copiar la candena ... pero la memoria justa */
+    // guardamos memoria para la copia de la cadena 
     char *str = malloc(strlen(orig)+1);
+    // copiamos la cadena que obtenermos con el fgets (linea original).
     strcpy(str, orig);
-    char tokens[] = " ',.;:-_!?¿¡(){}[]|@#~%&/\n\\";
+    // tokens: caracteres especiales que debe ignorar al momento de obtener la palabra 
+    char tokens[] = " ',.;:-_!?¿¡(){}[]|@#~%&/\n\\\t";
 
-    /* Extraemos la primera palabra */
+    // con el tmp la primera palabra
     tmp=strtok(str, tokens);
-  
+
     do{
-        if (num==max_args){
-            return max_args+1;  /* Si hemos extraído más cadenas que palabras devolvemos */
+        // verificamos si la canntidad de cadenas es mayor que la de palabras, si se cumple retornamos
+        if (num == max_args){
+            return (max_args+1);  
         }
-        /* El número de palabras máximo y salimos */
-        strcpy(args[num], tmp);   /* Copiamos la palabra actual en el array */
+        // El número de palabras máximo y salimos 
+        strcpy(args[num], tmp); // copiamos la palabra en el arreglo
         num++;
-        /* Extraemos la siguiente palabra */
+        // extraemos la siguiente palabra
         tmp=strtok(NULL, tokens);
-    }while (tmp!=NULL);
+    }while (tmp!=NULL);// culmina cuando el tmp encuentre NULL
 
   return num;
 }
 
-// funcion que se le trasapasa la palabra y se calcula la cantidad de letras
+/*
+    Funcion que se le trasapasa la palabra y se calcula la cantidad de letras
+*/
 int contLetras(char args[]){
     const char* aux= (const char*)args;
     int cont = 0;
@@ -139,9 +148,10 @@ int contLetras(char args[]){
     return cont; // retornamos la cantidad de letras que hay dentro de la palabra
 }
 
-// funcion que se les trasapasa la linea y se pasan a minuscula.
+/*
+    Funcion que se les trasapasa la linea y se pasan a minuscula.
+*/
 void minus(char* linea){
-    
     // utilizamos la funcion strlen(linea) para ir caracter por caracter usando la funcion
     // tolower 
     for(int i = 0; i < strlen(linea); i++){
@@ -149,10 +159,14 @@ void minus(char* linea){
     }
 }
 
+/*
+    Funcion que recibe el nombre de un documento, verifica si ya esta ignorandolo, si no lo agrega a un Treemap para luego de ahi
+    tomar cada palabra e ir agregandola a un Mapa 
+*/
 void* cargarDocumentos(Map *mapaGlobal, TreeMap * treemapDocs, int *numeroDocs){
     
     char archivo[1024];
-    //char aux_nombreArchivo[100];  
+     
     char *aux_nombreArchivo = (char*)malloc(sizeof(char));
     FILE * file;
  
@@ -163,25 +177,29 @@ void* cargarDocumentos(Map *mapaGlobal, TreeMap * treemapDocs, int *numeroDocs){
         strcat(archivo, ".txt");
         file = fopen(archivo, "r");
     }while(!file);
+    //Se hace el archivo
 
+    //Se busca si el documento entregado ya existe en el treemap de docs.
     Pair * doc = searchTreeMap(treemapDocs,aux_nombreArchivo);
 
     bool valido = true;
-    if(doc != NULL){
+    if(doc != NULL){ // Si no existe se devuelve al inicio de la funcion.
         printf("Documento ya esta cargado.\n");
         fclose(file);
         valido = false;
         cargarDocumentos(mapaGlobal,treemapDocs, numeroDocs);
     }else{
         (*numeroDocs)+=1;
+
         /////////// DATOS DEL DOCUMENTOS ///////////
         documento * nuevoDoc = (documento*)malloc(sizeof(documento));
-        char * auxaux = (char *)malloc(50*sizeof(char));
-        strcpy(auxaux,aux_nombreArchivo);
-        nuevoDoc->nombreDocumento = auxaux;
+        char * copia = (char *)malloc(50*sizeof(char));
+        strcpy(copia,aux_nombreArchivo);
+        nuevoDoc->nombreDocumento = copia;
         char ch;
         int caracteres=0, palabras=0;
-
+        
+        //Funcion que recorre todo el file contado las palabras y caracteres.
         while((ch = fgetc(file)) != EOF){
             caracteres++;
             if(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\0'){
@@ -194,7 +212,7 @@ void* cargarDocumentos(Map *mapaGlobal, TreeMap * treemapDocs, int *numeroDocs){
         if(caracteres > 0){
             palabras++;
         }
-
+        
         nuevoDoc -> cantidadPalabras = palabras;
         nuevoDoc -> cantidadCaracteres = caracteres;
         insertTreeMap(treemapDocs, nuevoDoc->nombreDocumento, nuevoDoc);
@@ -208,60 +226,69 @@ void* cargarDocumentos(Map *mapaGlobal, TreeMap * treemapDocs, int *numeroDocs){
         file = fopen(archivo, "r");
 
         while(fgets(lineaArchivo, 1024, file) != NULL){
+            // verificar el salto de linea porque no nos deja sacar palabras despues de eso.
             minus(lineaArchivo);
             int nargs = extrae_argumentos(lineaArchivo,args,MAX_ARGS);
             int i;
-                
+              
             if(nargs > MAX_ARGS){
                 printf ("Se han devuelto más palabras del máximo\n");
                 nargs = MAX_ARGS;
             }
             printf("Cadena: %s\n", lineaArchivo);
             for(i = 0; i < nargs; i++){
-
+                
+                //Se busca si la palabra existe en el mapa
                 palabra* nuevaPalabra = (palabra*) malloc (sizeof(palabra));
-                char* auxmil = (char*) malloc(sizeof(char));
-                strcpy(auxmil, args[i]);
-                nuevaPalabra->nombrePalabra = auxmil;
+                char* auxNombre = (char*) malloc(sizeof(char));
+                strcpy(auxNombre, args[i]);
+                nuevaPalabra->nombrePalabra = auxNombre;
+                
                 Map * M = searchMap(mapaGlobal,nuevaPalabra->nombrePalabra);
                 printf("BUSCANDO EN MAPA LA PALABRA: %s\n",nuevaPalabra->nombrePalabra);
                 nuevaPalabra->frecuencia = 0;
-                if(M==NULL){ //NO EXISTE PALABRA EN MAPA
                 
+                if(M==NULL){ //No existe palabra en el mapa.
+                    
                     printf("Nueva palabra encontrada:     ");
                         
-                    nuevaPalabra->frecuencia++;
-
                     datosDoc * datosDocumento = (datosDoc*)malloc(sizeof(datosDoc));
                     List * L = createList();
                     datosDocumento->frecPalabraDoc=1;
-                    char* aux = (char*) malloc(sizeof(char));
-                    strcpy(aux,aux_nombreArchivo);
-                    datosDocumento->nombreDoc = aux;
 
+                    char* copiaNombreArchivo = (char*) malloc(sizeof(char));
+                    strcpy(copiaNombreArchivo,aux_nombreArchivo);
+                    datosDocumento->nombreDoc = copiaNombreArchivo;
+
+                    //Se meten los datos del documento en la lista.
                     pushFront(L,datosDocumento);
+
+                    //Se rellena nuevaPalabra.
                     nuevaPalabra->datosDoc = L;
                     nuevaPalabra->cantidadDocs = 1;
+                    nuevaPalabra->frecuencia++;
+                    
+                    //Se cuenta las letras con la funcion contLetras.
                     int cantidadDeLetras = contLetras(args[i]);  
                     nuevaPalabra->cantidadLetras = cantidadDeLetras;
 
-                    printf("Palabra: %s. Frecuencia: %d. Cantidad de letras: %d.\n", nuevaPalabra->nombrePalabra,nuevaPalabra->frecuencia,nuevaPalabra->cantidadLetras);
-                    printf("Palabra viene de documento nuevo ---- Nombre txt: %s. Frecuencia palabra en doc: %d.\n",datosDocumento->nombreDoc,datosDocumento->frecPalabraDoc);
-                        
+                    //printf("Palabra: %s. Frecuencia: %d. Cantidad de letras: %d.\n", nuevaPalabra->nombrePalabra,nuevaPalabra->frecuencia,nuevaPalabra->cantidadLetras);
+                    //printf("Palabra viene de documento nuevo ---- Nombre txt: %s. Frecuencia palabra en doc: %d.\n",datosDocumento->nombreDoc,datosDocumento->frecPalabraDoc);
 
+                    //Se meten todos los datos en el mapa.
                     insertMap(mapaGlobal,nuevaPalabra->nombrePalabra,nuevaPalabra);
                         
                 }
                 else{ // EXISTE PALABRA EN MAPA
 
                     printf("Palabra ya existe en mapa:     ");
-                        
+                    //Se crea una nueva variable que toma el valor de la palabra encontrada
                     palabra * palabraExiste = (palabra*)searchMap(mapaGlobal,nuevaPalabra->nombrePalabra);
                     palabraExiste->frecuencia++;
                         
+                    //printf("Palabra: %s. Frecuencia: %d. Cantidad de letras: %d.\n", palabraExiste->nombrePalabra,palabraExiste->frecuencia,palabraExiste->cantidadLetras);
 
-                    printf("Palabra: %s. Frecuencia: %d. Cantidad de letras: %d.\n", palabraExiste->nombrePalabra,palabraExiste->frecuencia,palabraExiste->cantidadLetras);
-
+                    //Lista que toma el valor de datosDoc de la palabra encontrada.
                     List * list = createList();
                     list = palabraExiste->datosDoc;
 
@@ -269,42 +296,40 @@ void* cargarDocumentos(Map *mapaGlobal, TreeMap * treemapDocs, int *numeroDocs){
                     datosDocumento = firstList(palabraExiste->datosDoc);
                     bool existe = false;
 
-                    char* aux1 = (char*) malloc(sizeof(char));
-                    strcpy(aux1,aux_nombreArchivo);
+                    char* copiaNombreTxt = (char*) malloc(sizeof(char));
+                    strcpy(copiaNombreTxt,aux_nombreArchivo);
 
+                    //Se busca si existe el documento en la lista que está en la palabra.
                     while(datosDocumento!=NULL){
-                        if(strcmp(aux1,datosDocumento->nombreDoc) == 0){
-                            //printf("Nombre del documento ya existe en datosDoc de palabra.\n");
-                            //printf("Palabra: %s\n", palabraExiste->nombrePalabra);
+                        if(strcmp(copiaNombreTxt,datosDocumento->nombreDoc) == 0){
                             datosDocumento->frecPalabraDoc++;
-                            printf("Palabra viene de documento EXISTENTE ---- Nombre txt: %s. Frecuencia palabra en doc: %d.\n",datosDocumento->nombreDoc,datosDocumento->frecPalabraDoc);
+                            //printf("Palabra viene de documento EXISTENTE ---- Nombre txt: %s. Frecuencia palabra en doc: %d.\n",datosDocumento->nombreDoc,datosDocumento->frecPalabraDoc);
                             existe = true;
                             break;
                         }    
                         datosDocumento=nextList(palabraExiste->datosDoc);
                         if(palabraExiste->datosDoc == NULL)break;
                     }
-                        
-                    // Nombre de doc no está en datosDoc de palabra, o sea el archivo de donde sale la palabra
-                    // es nuevo.
+
+                    // Nombre de doc no está en datosDoc de palabra, o sea el archivo de donde sale la palabra es nuevo.
                     if(existe == false){
-                        //printf("Palabra proviene de archivo nuevo\n");
-                        //printf("Palabra: %s\n", palabraExiste->nombrePalabra);
                         palabraExiste->cantidadDocs += 1;
+
+                        //Se crean los nuevos datos del documento y se meten en la lista.
                         datosDoc * datos = (datosDoc*)malloc(sizeof(datosDoc));
                         datos->frecPalabraDoc=1;
-                        char* aux = (char*) malloc(sizeof(char));
-                        strcpy(aux,aux_nombreArchivo);
-                        datos->nombreDoc = aux;
-                        //datos->nombreDoc = aux_nombreArchivo;
-                        printf("Palabra viene de documento NUEVO ---- Nombre txt: %s. Frecuencia palabra en doc: %d.\n",datos->nombreDoc,datos->frecPalabraDoc);
+                        char* copiaTxt = (char*) malloc(sizeof(char));
+                        strcpy(copiaTxt,aux_nombreArchivo);
+                        datos->nombreDoc = copiaTxt;
+                        //printf("Palabra viene de documento NUEVO ---- Nombre txt: %s. Frecuencia palabra en doc: %d.\n",datos->nombreDoc,datos->frecPalabraDoc);
                         pushFront(list,datos);
                     }
                 }
-                    printf("\n\n");
+                printf("\n\n");
             }
         }
 
+        //Se verifica si se quiere importar otro txt.
         char * palabra = (char*)malloc(3*sizeof(char));
         char * confirmacion = (char*)malloc(3*sizeof(char));
         confirmacion = "SI";
@@ -312,35 +337,45 @@ void* cargarDocumentos(Map *mapaGlobal, TreeMap * treemapDocs, int *numeroDocs){
         printf("Si desea cargar otro archivo escriba 'SI': ");
         scanf("%s", palabra);
         fclose(file);
-        if(strcmp(palabra, confirmacion) == 0){
+        if(strcmp(palabra, confirmacion) == 0){//Si pone "SI", se vuelve al inicio de la funcion
             cargarDocumentos(mapaGlobal,treemapDocs, numeroDocs);
         }
         printf("Archivos cargados\n");
     }
 }
 
+/*
+    Funcion que recorre el TreeMap de los documentos, mostrando cada uno de estos de forma ordenada
+*/
 void * documentoOrdenados(TreeMap * treemapDocs){
     
     Pair * docOrden = firstTreeMap(treemapDocs);
 
     while(docOrden != NULL){
+        //Se crea un tipo documento para guardar lo que tiene en el pair.
+        documento * docDatos = (documento*)malloc(sizeof(documento));
+        docDatos = docOrden->value;
         printf("Nombre documento: %s \n", docOrden->key);
+        printf("Numero palabras: %d \n", docDatos->cantidadPalabras);
+        printf("Numero caracteres: %d \n", docDatos->cantidadCaracteres);
         
         docOrden = nextTreeMap(treemapDocs);
     }
     
 }
 
-/*funcion para buscar palabra, en caso de que la palabra ingresada sea erronea o no exista se muestra por pantalla */
-
+/*
+    Funcion para buscar palabra, en caso de que la palabra ingresada sea erronea o no exista se muestra por pantalla en caso contrario
+    se espera que se encuentre la palabra deseada
+*/
 void * buscarPorPalabra(Map * mapaGlobal){
 
-    char * palabraIngresada = (char*)malloc(50 * sizeof(char)); //  modificacion cantidad 
-
+    char * palabraIngresada = (char*)malloc(50 * sizeof(char)); //  Modificacion cantidad 
     printf("Ingrese la palabra a buscar: ");
-
     scanf("%s", palabraIngresada); 
-
+    
+    // Se verifica si la palabra ingresada existe dentro de nuestro mapa global.
+    
     const char * M = searchMap(mapaGlobal,palabraIngresada);
 
     if(M == NULL){ 
@@ -349,19 +384,22 @@ void * buscarPorPalabra(Map * mapaGlobal){
     else{
         printf("Palabra encontrada.\n");
         palabra * palabraExiste = (palabra*)searchMap(mapaGlobal,palabraIngresada);
+
+        //Pasamos por la lista de los documento de la palabra para saber cuantos tiene.
         datosDoc * datosDocumento = (datosDoc*)malloc(sizeof(datosDoc));
         datosDocumento = firstList(palabraExiste->datosDoc);
-
         int cont = 0;
         while(datosDocumento != NULL){
             cont++;
-            //printf("%s\n",datosDocumento->nombreDoc);
             datosDocumento=nextList(palabraExiste->datosDoc);
         }
-
+        
         int numeroDocs = cont;
+
         datosDocumento = firstList(palabraExiste->datosDoc);
         cont=0;
+
+        //Se muestra la palabra con los datos del doc.
         while(numeroDocs != 0){
             cont++;
             if(cont = datosDocumento->frecPalabraDoc){
@@ -380,12 +418,10 @@ void * buscarPorPalabra(Map * mapaGlobal){
 
 }
 
-
 /*
     Funcion que revisa en un documento, las frecuencias de sus palabras, para luego mostrar las 10 palabras (si es que la hay)
     con mayor frecuencia del documento
 */
-
 void* mostarPalabrasFrecuencia(Map* mapaGlobal, TreeMap* treemapDocs){
 
     char* nombreTxt = (char*) malloc(50 * sizeof(char));
@@ -395,7 +431,7 @@ void* mostarPalabrasFrecuencia(Map* mapaGlobal, TreeMap* treemapDocs){
     //Buscar si nombreDoc existe en listaDocs.
     // verificacion si existe el documento en nuestra lista
     bool valido = false;
-
+    
     Pair* pair = searchTreeMap(treemapDocs,nombreTxt);
 
     if(pair != NULL){
@@ -407,12 +443,12 @@ void* mostarPalabrasFrecuencia(Map* mapaGlobal, TreeMap* treemapDocs){
     TreeMap * treeMapFrec = createTreeMap(lower_than_double);
 
     if(valido == true){
-        documento* auxiliarNP = (documento*)malloc(sizeof(malloc));
-        auxiliarNP = pair->value;
+        documento* auxPair = (documento*)malloc(sizeof(malloc));
+        auxPair = pair->value;
 
         FILE * txt;
-        char * blocDeNotas = (char*)malloc(50*sizeof(char));
-        strcpy(blocDeNotas,nombreTxt);
+        char * copyNombreTxt = (char*)malloc(50*sizeof(char));
+        strcpy(copyNombreTxt,nombreTxt);
         strcat(nombreTxt,".txt");
         txt = fopen(nombreTxt, "r");
 
@@ -430,23 +466,25 @@ void* mostarPalabrasFrecuencia(Map* mapaGlobal, TreeMap* treemapDocs){
 
             while(datosAux != NULL){
 
-                if(strcmp(datosAux->nombreDoc,blocDeNotas) == 0){
+                if(strcmp(datosAux->nombreDoc,copyNombreTxt) == 0){
                     
                     char * nombrePalF = (char*)malloc(50*sizeof(char));
                     strcpy(nombrePalF, (M->nombrePalabra));
                     
+                    //Se realiza la formula para sacar la frecuencia.
                     double cosa;
-                    cosa = ((double)datosAux->frecPalabraDoc)/((double)auxiliarNP->cantidadPalabras);
+                    cosa = ((double)datosAux->frecPalabraDoc)/((double)auxPair->cantidadPalabras);
                     double* frecuencia= (double*)malloc(sizeof(double));
                     *frecuencia = cosa;
                     printf("%s ",nombrePalF);
                     printf("%.2lf\n", *frecuencia);
-
+                    
+                    //Se crea una lista de palabras que contegan la misma frecuencia
                     Pair* buscarR = (Pair*)malloc(sizeof(Pair));
                     buscarR = searchTreeMap(treeMapFrec,frecuencia);
 
                     if(buscarR == NULL){
-                        // no existe la frecuencia en el mapa
+                        // No existe la frecuencia en el mapa
                         List* listaFR = createList();
                         pushBack(listaFR,nombrePalF);
                         insertTreeMap(treeMapFrec,frecuencia,listaFR);
@@ -464,19 +502,22 @@ void* mostarPalabrasFrecuencia(Map* mapaGlobal, TreeMap* treemapDocs){
             if(M == NULL)break;
         }
 
+        //Se mustran las 10 palabras con mas frecuencias
+        //Con el pair guardamos el value y key de la palabra.
         Pair * par = firstTreeMap(treeMapFrec);
         int contDiez = 0;
         printf("\n");
         while(par != NULL){
             List* lista = par->value;
-            double* auxiliar = (double*)malloc(sizeof(double));
-            auxiliar = firstList(lista);
-            while(auxiliar != NULL){
-                printf("Palabra: %s. Relevancia: %.2lf.\n", auxiliar, *(double*)par->key);//par->key, par->value);
+            double* auxList = (double*)malloc(sizeof(double));
+            auxList = firstList(lista);
+            //Como el value es una lista, se recorre para mostrar las palabras dentro de esta.
+            while(auxList != NULL){
+                printf("Palabra: %s. Relevancia: %.2lf.\n", auxList, *(double*)par->key);//par->key, par->value);
                 contDiez+=1;   
                 if(contDiez == 10)break;
-                auxiliar = nextList(lista);
-                if(auxiliar == NULL)break;
+                auxList = nextList(lista);
+                if(auxList == NULL)break;
             }
             par = nextTreeMap(treeMapFrec);
             if(contDiez == 10)break;
@@ -484,11 +525,7 @@ void* mostarPalabrasFrecuencia(Map* mapaGlobal, TreeMap* treemapDocs){
         }
         
     }
-    
-    
 }
-
-
 
 /*
     Funcion  que verifica si el documento ingreaso se encuentra en la lista docs. Dentro de este se crea una lista que guarda las palabras
@@ -520,56 +557,46 @@ void* mostrarPalabrasRelevantes(Map* mapaGlobal, TreeMap* treemapDocs, int* nume
         docAux = pair->value;
 
         FILE * txt;
-        char * blocDeNotas = (char*)malloc(50*sizeof(char));
-        strcpy(blocDeNotas,nombreTxt);
+        char * copyNombreTxt = (char*)malloc(50*sizeof(char));
+        strcpy(copyNombreTxt,nombreTxt);
         strcat(nombreTxt,".txt");
         txt = fopen(nombreTxt, "r");
-
-        // Crear lista con struct "relevantes" (RELEVANCIA Y nombrePalabraR)
-        
-        //TreeMap * treeMapPR = createTreeMap(lower_than_double);
         palabra * M;
         M = firstMap(mapaGlobal);
-        //printf("FUERA DEL PRIMER WHILE\n");
+        
         while(M != NULL){
 
             // Recorrer mapaGlobal, solo nos importan las palabras que tengan el doc buscado asociado a su datosDoc.
-            
             // Si encuentra una palabra que tiene el documento buscado:
             List * listAux = M->datosDoc;
             datosDoc * datosAux = firstList(listAux);
             while(datosAux != NULL){
 
-                if(strcmp(datosAux->nombreDoc,blocDeNotas)==0){
+                if(strcmp(datosAux->nombreDoc,copyNombreTxt)==0){
 
-                    char* aux = (char*)malloc(50*sizeof(char));
-                    strcpy(aux, (M->nombrePalabra));
-                    
-                    printf("Nombre palabra: %s\n",aux);
-                    
+                    char* auxNombrePalabra = (char*)malloc(50*sizeof(char));
+                    strcpy(auxNombrePalabra, (M->nombrePalabra));
+
+                    //Se realiza la formual de relevancia.
                     double primeraParte = ((double)(datosAux->frecPalabraDoc)/(docAux->cantidadPalabras));
                     double segundaParte = log(((double)*numeroDocs)/M->cantidadDocs);
                     double* palabraR = (double*)malloc(sizeof(double));
 
                     *palabraR = (primeraParte * segundaParte);
 
-                    printf("Relevancia: %.2lf\n",*palabraR);
-
+                    //Se busca en el treemap si ya existe la relevancia.
                     Pair* buscarR = (Pair*)malloc(sizeof(Pair));
-
                     buscarR = searchTreeMap(treeMapPR,palabraR);
                     
                     if(buscarR == NULL){
-                        // no existe la frecuencia en el mapa
+                        // No existe la relevancia en el mapa
                         List* listaFR = createList();
-                        pushBack(listaFR,aux);
+                        pushBack(listaFR,auxNombrePalabra);
                         insertTreeMap(treeMapPR,palabraR,listaFR);
-                    }else{ //Frecuencia ya existe en el mapa
+                    }else{ // Relevancia ya existe en el mapa
                         List* listaFr = buscarR->value;
-                        pushBack(listaFr,aux);
+                        pushBack(listaFr,auxNombrePalabra);
                     }
-                    //insertTreeMap(treeMapPR,palabraR,_strdup(aux));
-                    //pushBack(listaPR,palabraRelevante);
                 }
                 datosAux = nextList(listAux);
                 if(datosAux == NULL){
@@ -581,19 +608,22 @@ void* mostrarPalabrasRelevantes(Map* mapaGlobal, TreeMap* treemapDocs, int* nume
             if(M == NULL)break;
         }
 
+        //Se mustran las 10 palabras con mas relevancia
+        //Con el pair guardamos el value y key de la palabra.
         Pair * par = firstTreeMap(treeMapPR);
-        int contDiez = 0;
+        int contDiez = 0; 
         printf("\n");
         while(par != NULL){
-            List* lista = par->value;
-            double* auxiliar = (double*)malloc(sizeof(double));
-            auxiliar = firstList(lista);
-            while(auxiliar != NULL){
-                printf("Palabra: %s. Relevancia: %.2lf.\n", auxiliar, *(double*)par->key);//par->key, par->value);
+            List* listaRelevantes = par->value;
+            double* auxList = (double*)malloc(sizeof(double));
+            auxList = firstList(listaRelevantes);
+            //Como el value es una lista, se recorre para mostrar las palabras dentro de esta.
+            while(auxList != NULL){
+                printf("Palabra: %s. Relevancia: %.2lf.\n", auxList, *(double*)par->key);//par->key, par->value);
                 contDiez+=1;   
                 if(contDiez == 10)break;
-                auxiliar = nextList(lista);
-                if(auxiliar == NULL)break;
+                auxList = nextList(listaRelevantes);
+                if(auxList == NULL)break;
             }
             par = nextTreeMap(treeMapPR);
             if(contDiez == 10)break;
@@ -613,27 +643,17 @@ void* buscarPalabraDoc(Map* mapaGlobal, TreeMap* treemapDocs){
     printf("Ingrese el nombre del documento: ");
     scanf("%s", nombreDoc);
     
-    // verificacion si existe el documento en nuestra lista
     bool valido = false;
-
-    //documento * docList = (documento*)malloc(sizeof(documento));
-    //documento * docList;
-    //docList = firstList(listaDocs);
-    
     Pair* pair = searchTreeMap(treemapDocs,nombreDoc);
 
     if(pair != NULL){
         valido = true;
     }else{
-        printf("Documento buscado no existe\n");
+        printf("Documento buscado no existe.\n");
     }
 
-    
-
-    // el documetno fue encontrado
-
     if(valido == true){
-        printf("El documento existe, continua la operacion\n");
+        printf("El documento fue encontrado.\n");
 
         char* nombrePalabra = (char*)malloc(100 * sizeof(char));
         printf("Ingrese el nombre de la palabra: ");
@@ -666,7 +686,7 @@ void* buscarPalabraDoc(Map* mapaGlobal, TreeMap* treemapDocs){
 
                 if(strcmp(aux,nombrePalabra) == 0){
 
-                    printf("contexto palabra: ");
+                    printf("Contexto palabra: ");
                     // args[i-1] corresponde a la palabra anterior a la buscada y el if es para comprobar si en esa posicion
                     // no existe nada entonces printfteara que no encontro nada
                     if(args[i-1] == NULL){ 
